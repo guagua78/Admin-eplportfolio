@@ -5,7 +5,7 @@ Public Class database
     ' 1. Double check these match your Aiven Overview page exactly
     Private Shared serverHost As String = "mysql-eplportfolio-kemangelowz-b5f3.i.aivencloud.com"
     Private Shared serverPort As Integer = 20753 ' Replace 21345 with your exact Aiven Port
-    Private Shared dbName As String = "defaultdb"
+    Private Shared dbName As String = "eportfoliodb"
     Private Shared dbUser As String = "avnadmin"
     Private Shared dbPass As String = "AVNS_Bv70rUB-VpRD9SW-wVg"
 
