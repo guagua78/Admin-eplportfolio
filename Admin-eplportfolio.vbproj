@@ -133,6 +133,12 @@
     <Compile Include="frmAdminDashborard.vb">
       <SubType>Form</SubType>
     </Compile>
+    <Compile Include="frmArtifactDetailModal.Designer.vb">
+      <DependentUpon>frmArtifactDetailModal.vb</DependentUpon>
+    </Compile>
+    <Compile Include="frmArtifactDetailModal.vb">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="My Project\AssemblyInfo.vb" />
     <Compile Include="My Project\Application.Designer.vb">
       <AutoGen>True</AutoGen>
@@ -153,6 +159,12 @@
   <ItemGroup>
     <EmbeddedResource Include="Form1.resx">
       <DependentUpon>Form1.vb</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="frmAdminDashborard.resx">
+      <DependentUpon>frmAdminDashborard.vb</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="frmArtifactDetailModal.resx">
+      <DependentUpon>frmArtifactDetailModal.vb</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="My Project\Resources.resx">
       <Generator>VbMyResourcesResXFileCodeGenerator</Generator>

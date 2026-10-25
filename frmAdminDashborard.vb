@@ -1,211 +1,311 @@
-﻿Imports System.Drawing.Drawing2D
-Imports MySql.Data.MySqlClient
+﻿Imports MySql.Data.MySqlClient
+Imports System.Drawing
+Imports System.Windows.Forms
 
 Public Class frmAdminDashboard
 
-    Private selectedStudentNumber As String = ""
-    Private chartLabels As New List(Of String)()
-    Private chartValues As New List(Of Integer)()
-
     Private Sub frmAdminDashboard_Load(sender As Object, e As EventArgs) Handles MyBase.Load
-        PopulateStudentDropdown()
+        PopulateStudentComboBox()
+        LoadArtifactRecords()
     End Sub
 
-    ' -------------------------------------------------------------
-    ' POPULATE STUDENTS DROPDOWN
-    ' -------------------------------------------------------------
-    Private Sub PopulateStudentDropdown()
+    ''' <summary>
+    ''' Populates the student search dropdown with all registered students.
+    ''' </summary>
+    Private Sub PopulateStudentComboBox()
         Try
             Using conn As MySqlConnection = database.GetConnection()
                 If conn IsNot Nothing Then
-                    Dim query As String = "SELECT student_number, CONCAT(last_name, ', ', first_name, ' (', student_number, ')') AS student_display FROM students ORDER BY last_name ASC"
+                    Dim query As String = "SELECT student_number, CONCAT(student_number, ' - ', last_name, ', ', first_name) AS display_name FROM students ORDER BY last_name ASC"
                     Dim adapter As New MySqlDataAdapter(query, conn)
                     Dim dt As New DataTable()
                     adapter.Fill(dt)
 
-                    cmbStudents.DataSource = dt
-                    cmbStudents.DisplayMember = "student_display"
-                    cmbStudents.ValueMember = "student_number"
+                    ' Insert default option for viewing all students
+                    Dim dr As DataRow = dt.NewRow()
+                    dr("student_number") = "ALL"
+                    dr("display_name") = "-- All Registered Students --"
+                    dt.Rows.InsertAt(dr, 0)
 
-                    If cmbStudents.Items.Count > 0 Then
-                        cmbStudents.SelectedIndex = 0
+                    cboStudentSearch.DataSource = dt
+                    cboStudentSearch.DisplayMember = "display_name"
+                    cboStudentSearch.ValueMember = "student_number"
+                    cboStudentSearch.SelectedIndex = 0
+                End If
+            End Using
+        Catch ex As Exception
+            MessageBox.Show("Error loading student list: " & ex.Message, "Database Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+        End Try
+    End Sub
+
+    ''' <summary>
+    ''' Loads artifact entries filtered by the selected student dropdown and keyword filter.
+    ''' </summary>
+    Private Sub LoadArtifactRecords()
+        Try
+            Using conn As MySqlConnection = database.GetConnection()
+                If conn IsNot Nothing Then
+                    Dim selectedStudentNo As String = If(cboStudentSearch.SelectedValue IsNot Nothing, cboStudentSearch.SelectedValue.ToString(), "ALL")
+                    Dim filterText As String = txtFilterRecords.Text.Trim()
+
+                    ' Build Query
+                    Dim query As String = "SELECT " &
+                                         "  p.entry_id AS 'ID', " &
+                                         "  p.student_number AS 'Student No.', " &
+                                         "  CONCAT(s.last_name, ', ', s.first_name) AS 'Student Name', " &
+                                         "  p.title AS 'Title', " &
+                                         "  c.category_name AS 'Skill Competency', " &
+                                         "  COALESCE(p.course_code, 'N/A') AS 'Course Code', " &
+                                         "  act.type_name AS 'Activity Type', " &
+                                         "  p.date_completed AS 'Date Completed' " &
+                                         "FROM portfolio_entries p " &
+                                         "INNER JOIN students s ON p.student_number = s.student_number " &
+                                         "LEFT JOIN categories c ON p.category_id = c.category_id " &
+                                         "LEFT JOIN activity_types act ON p.activity_type_id = act.activity_type_id " &
+                                         "WHERE 1=1"
+
+                    ' Apply Dropdown Filter
+                    If selectedStudentNo <> "ALL" Then
+                        query &= " AND p.student_number = @selectedStudentNo"
+                    End If
+
+                    ' Apply Table Search Filter
+                    If Not String.IsNullOrWhiteSpace(filterText) Then
+                        query &= " AND (p.student_number LIKE @filter " &
+                                 "   OR s.first_name LIKE @filter " &
+                                 "   OR s.last_name LIKE @filter " &
+                                 "   OR p.title LIKE @filter " &
+                                 "   OR p.course_code LIKE @filter)"
+                    End If
+
+                    query &= " ORDER BY p.entry_id DESC"
+
+                    Dim cmd As New MySqlCommand(query, conn)
+                    If selectedStudentNo <> "ALL" Then
+                        cmd.Parameters.AddWithValue("@selectedStudentNo", selectedStudentNo)
+                    End If
+                    If Not String.IsNullOrWhiteSpace(filterText) Then
+                        cmd.Parameters.AddWithValue("@filter", "%" & filterText & "%")
+                    End If
+
+                    Dim adapter As New MySqlDataAdapter(cmd)
+                    Dim dt As New DataTable()
+                    adapter.Fill(dt)
+
+                    dgvAdminPortfolio.DataSource = dt
+                    AddActionButtonColumn()
+
+                    ' Update Stats & Info Header
+                    UpdateSummaryMetrics(selectedStudentNo, dt)
+                End If
+            End Using
+        Catch ex As Exception
+            MessageBox.Show("Error loading portfolio entries: " & ex.Message, "Database Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+        End Try
+    End Sub
+
+    ''' <summary>
+    ''' Updates card metrics (Artifacts Logged, Competencies Covered, Last Activity, and Student Info).
+    ''' </summary>
+    Private Sub UpdateSummaryMetrics(selectedStudentNo As String, dt As DataTable)
+        lblArtifactsVal.Text = dt.Rows.Count.ToString()
+
+        Try
+            Using conn As MySqlConnection = database.GetConnection()
+                If conn IsNot Nothing Then
+
+                    If selectedStudentNo = "ALL" Then
+                        ' --- SYSTEM-WIDE VIEW ("All Registered Students") ---
+                        lblInfoStudentNum.Text = "Student ID: All Records"
+                        lblInfoFullName.Text = "Full Name: System Wide View"
+                        lblInfoProgram.Text = "Degree Program: All Enrolled CS/IT"
+
+                        ' Total distinct competencies covered across all entries
+                        Dim globalCompQuery As String = "SELECT COUNT(DISTINCT category_id) FROM portfolio_entries"
+                        Using cmdComp As New MySqlCommand(globalCompQuery, conn)
+                            Dim compCount As Integer = Convert.ToInt32(cmdComp.ExecuteScalar())
+                            lblCompetenciesVal.Text = $"{compCount}/7"
+                        End Using
+
+                        ' Most recent overall activity upload date in the entire database
+                        Dim globalLastQuery As String = "SELECT MAX(date_completed) FROM portfolio_entries"
+                        Using cmdLast As New MySqlCommand(globalLastQuery, conn)
+                            Dim lastDateObj = cmdLast.ExecuteScalar()
+                            If lastDateObj IsNot DBNull.Value AndAlso lastDateObj IsNot Nothing Then
+                                lblLastActivityVal.Text = Convert.ToDateTime(lastDateObj).ToString("MM/dd/yyyy")
+                            Else
+                                lblLastActivityVal.Text = "N/A"
+                            End If
+                        End Using
+
+                    Else
+                        ' --- INDIVIDUAL STUDENT VIEW ---
+                        ' Get Student Profile Details
+                        Dim studQuery As String = "SELECT first_name, last_name, degree_program FROM students WHERE student_number = @sNo LIMIT 1"
+                        Using cmd As New MySqlCommand(studQuery, conn)
+                            cmd.Parameters.AddWithValue("@sNo", selectedStudentNo)
+                            Using reader As MySqlDataReader = cmd.ExecuteReader()
+                                If reader.Read() Then
+                                    lblInfoStudentNum.Text = $"Student ID: {selectedStudentNo}"
+                                    lblInfoFullName.Text = $"Full Name: {reader("last_name")}, {reader("first_name")}"
+                                    lblInfoProgram.Text = $"Degree Program: {reader("degree_program")}"
+                                End If
+                            End Using
+                        End Using
+
+                        ' Unique Categories Count for this student
+                        Dim compQuery As String = "SELECT COUNT(DISTINCT category_id) FROM portfolio_entries WHERE student_number = @sNo"
+                        Using cmdComp As New MySqlCommand(compQuery, conn)
+                            cmdComp.Parameters.AddWithValue("@sNo", selectedStudentNo)
+                            Dim compCount As Integer = Convert.ToInt32(cmdComp.ExecuteScalar())
+                            lblCompetenciesVal.Text = $"{compCount}/7"
+                        End Using
+
+                        ' Last Activity Date for this student
+                        Dim lastActQuery As String = "SELECT MAX(date_completed) FROM portfolio_entries WHERE student_number = @sNo"
+                        Using cmdLast As New MySqlCommand(lastActQuery, conn)
+                            cmdLast.Parameters.AddWithValue("@sNo", selectedStudentNo)
+                            Dim lastDateObj = cmdLast.ExecuteScalar()
+                            If lastDateObj IsNot DBNull.Value AndAlso lastDateObj IsNot Nothing Then
+                                lblLastActivityVal.Text = Convert.ToDateTime(lastDateObj).ToString("MM/dd/yyyy")
+                            Else
+                                lblLastActivityVal.Text = "N/A"
+                            End If
+                        End Using
+
                     End If
                 End If
             End Using
         Catch ex As Exception
-            MessageBox.Show("Error loading students: " & ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
-        End Try
-    End Sub
-
-    Private Sub cmbStudents_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cmbStudents.SelectedIndexChanged
-        If cmbStudents.SelectedValue IsNot Nothing AndAlso Not TypeOf cmbStudents.SelectedValue Is DataRowView Then
-            selectedStudentNumber = cmbStudents.SelectedValue.ToString()
-            LoadStudentOverview()
-            LoadStudentChart()
-            LoadStudentPortfolio()
-        End If
-    End Sub
-
-    ' -------------------------------------------------------------
-    ' LOAD STUDENT OVERVIEW METRICS
-    ' -------------------------------------------------------------
-    Private Sub LoadStudentOverview()
-        Try
-            Using conn As MySqlConnection = database.GetConnection()
-                If conn IsNot Nothing Then
-                    Dim query As String = "SELECT COUNT(*) AS total_artifacts, COUNT(DISTINCT category_id) AS total_categories FROM portfolio_entries WHERE student_number = @stud"
-                    Using cmd As New MySqlCommand(query, conn)
-                        cmd.Parameters.AddWithValue("@stud", selectedStudentNumber)
-                        Using reader As MySqlDataReader = cmd.ExecuteReader()
-                            If reader.Read() Then
-                                lblTotalEntries.Text = reader("total_artifacts").ToString() & " Artifacts Logged"
-                                lblActiveCategories.Text = reader("total_categories").ToString() & " Competencies Covered"
-                            End If
-                        End Using
-                    End Using
-                End If
-            End Using
-        Catch ex As Exception
-        End Try
-    End Sub
-
-    ' -------------------------------------------------------------
-    ' LOAD CHART DATA FOR SELECTED STUDENT
-    ' -------------------------------------------------------------
-    Private Sub LoadStudentChart()
-        chartLabels.Clear()
-        chartValues.Clear()
-
-        Try
-            Using conn As MySqlConnection = database.GetConnection()
-                If conn IsNot Nothing Then
-                    Dim query As String = "SELECT c.category_name, COUNT(pe.entry_id) AS total_entries " &
-                                          "FROM categories c " &
-                                          "LEFT JOIN portfolio_entries pe ON c.category_id = pe.category_id AND pe.student_number = @stud " &
-                                          "GROUP BY c.category_id, c.category_name " &
-                                          "ORDER BY c.category_id ASC"
-
-                    Using cmd As New MySqlCommand(query, conn)
-                        cmd.Parameters.AddWithValue("@stud", selectedStudentNumber)
-                        Using reader As MySqlDataReader = cmd.ExecuteReader()
-                            While reader.Read()
-                                chartLabels.Add(reader("category_name").ToString())
-                                chartValues.Add(Convert.ToInt32(reader("total_entries")))
-                            End While
-                        End Using
-                    End Using
-                End If
-            End Using
-        Catch ex As Exception
+            ' Fallback
         End Try
 
+        ' Redraw chart bars
         pnlAdminChart.Invalidate()
     End Sub
 
-    ' -------------------------------------------------------------
-    ' DRAW GDI+ CHART FOR ADMIN VIEW
-    ' -------------------------------------------------------------
+    ''' <summary>
+    ''' Custom GDI+ renderer for drawing competency bar counts inside pnlAdminChart.
+    ''' </summary>
     Private Sub pnlAdminChart_Paint(sender As Object, e As PaintEventArgs) Handles pnlAdminChart.Paint
         Dim g As Graphics = e.Graphics
-        g.SmoothingMode = SmoothingMode.AntiAlias
+        g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias
 
-        Dim marginX As Integer = 50
-        Dim marginTop As Integer = 35
-        Dim marginBottom As Integer = 35
-        Dim drawWidth As Single = pnlAdminChart.Width - (marginX * 2)
-        Dim drawHeight As Single = pnlAdminChart.Height - marginTop - marginBottom
+        Dim categories() As String = {"Leadership", "Communication", "Teamwork", "Technical Skills", "Professional Development", "Community Engagement", "Personal Development"}
+        Dim counts(categories.Length - 1) As Integer
 
-        If chartValues.Count = 0 OrElse chartValues.Sum() = 0 Then
-            Using fontHint As New Font("Segoe UI", 9.0!, FontStyle.Italic)
-                g.DrawString("No portfolio records logged for this student yet.", fontHint, Brushes.Gray, marginX, marginTop + 15)
-            End Using
-            Return
+        ' Count occurrences of each competency category in active table rows
+        If dgvAdminPortfolio.DataSource IsNot Nothing Then
+            Dim dt As DataTable = CType(dgvAdminPortfolio.DataSource, DataTable)
+            For Each row As DataRow In dt.Rows
+                Dim catName As String = row("Skill Competency").ToString()
+                For i As Integer = 0 To categories.Length - 1
+                    If categories(i).Equals(catName, StringComparison.OrdinalIgnoreCase) Then
+                        counts(i) += 1
+                        Exit For
+                    End If
+                Next
+            Next
         End If
 
-        Dim maxVal As Single = Math.Max(4, chartValues.Max())
-        Dim itemWidth As Single = drawWidth / chartValues.Count
-        Dim barWidth As Single = Math.Min(itemWidth * 0.5F, 50.0F)
-
-        For i As Integer = 0 To chartValues.Count - 1
-            Dim countVal As Integer = chartValues(i)
-            Dim barHeight As Single = (countVal / maxVal) * drawHeight
-
-            Dim barX As Single = marginX + (i * itemWidth) + ((itemWidth - barWidth) / 2.0F)
-            Dim barY As Single = (pnlAdminChart.Height - marginBottom) - barHeight
-
-            If barHeight > 0 Then
-                Dim renderRect As New RectangleF(barX, barY, barWidth, barHeight)
-                Using barBrush As New LinearGradientBrush(renderRect, Color.FromArgb(24, 88, 54), Color.FromArgb(45, 125, 80), LinearGradientMode.Vertical)
-                    g.FillRectangle(barBrush, renderRect)
-                End Using
-
-                Using fontBadge As New Font("Segoe UI", 8.0!, FontStyle.Bold)
-                    Dim valStr As String = countVal.ToString()
-                    Dim badgeSize As SizeF = g.MeasureString(valStr, fontBadge)
-                    g.DrawString(valStr, fontBadge, Brushes.DarkSlateGray, barX + ((barWidth - badgeSize.Width) / 2.0F), barY - 16)
-                End Using
-            End If
-
-            Using fontX As New Font("Segoe UI", 7.5!, FontStyle.Bold)
-                Dim labelStr As String = chartLabels(i)
-                If labelStr.Length > 12 Then labelStr = labelStr.Substring(0, 10) & ".."
-                Dim lblSize As SizeF = g.MeasureString(labelStr, fontX)
-                g.DrawString(labelStr, fontX, Brushes.DimGray, barX + ((barWidth - lblSize.Width) / 2.0F), pnlAdminChart.Height - marginBottom + 4)
-            End Using
+        Dim maxCount As Integer = 1
+        For Each cnt As Integer In counts
+            If cnt > maxCount Then maxCount = cnt
         Next
 
-        Using axisPen As New Pen(Color.FromArgb(180, 190, 185), 1.5F)
-            g.DrawLine(axisPen, marginX, pnlAdminChart.Height - marginBottom, pnlAdminChart.Width - marginX, pnlAdminChart.Height - marginBottom)
+        Dim panelWidth As Integer = pnlAdminChart.Width
+        Dim panelHeight As Integer = pnlAdminChart.Height
+        Dim barWidth As Integer = 36
+        Dim spacing As Integer = panelWidth \ (categories.Length + 1)
+
+        Using barBrush As New SolidBrush(Color.FromArgb(8, 88, 48)),
+              textBrush As New SolidBrush(Color.FromArgb(60, 70, 80)),
+              lblFont As New Font("Segoe UI", 8.0!, FontStyle.Regular),
+              valFont As New Font("Segoe UI", 9.0!, FontStyle.Bold)
+
+            For i As Integer = 0 To categories.Length - 1
+                Dim xCenter As Integer = spacing * (i + 1)
+                Dim xPos As Integer = xCenter - (barWidth \ 2)
+
+                Dim barHeight As Integer = CInt((counts(i) / CSng(maxCount)) * (panelHeight - 60))
+                If counts(i) > 0 AndAlso barHeight < 6 Then barHeight = 6
+
+                Dim yPos As Integer = panelHeight - 35 - barHeight
+
+                If counts(i) > 0 Then
+                    g.FillRectangle(barBrush, xPos, yPos, barWidth, barHeight)
+                Else
+                    g.FillRectangle(Brushes.LightGray, xPos, panelHeight - 37, barWidth, 2)
+                End If
+
+                Dim countStr As String = counts(i).ToString()
+                Dim valSize As SizeF = g.MeasureString(countStr, valFont)
+                g.DrawString(countStr, valFont, textBrush, xCenter - (valSize.Width / 2), yPos - 18)
+
+                Dim labelText As String = categories(i)
+                If labelText.Length > 12 Then labelText = labelText.Substring(0, 10) & ".."
+                Dim lblSize As SizeF = g.MeasureString(labelText, lblFont)
+                g.DrawString(labelText, lblFont, textBrush, xCenter - (lblSize.Width / 2), panelHeight - 25)
+            Next
         End Using
     End Sub
 
-    ' -------------------------------------------------------------
-    ' LOAD PORTFOLIO ENTRIES FOR SELECTED STUDENT
-    ' -------------------------------------------------------------
-    Private Sub LoadStudentPortfolio()
-        If String.IsNullOrEmpty(selectedStudentNumber) Then Return
-
-        Try
-            Using conn As MySqlConnection = database.GetConnection()
-                If conn IsNot Nothing Then
-                    Dim query As String = "SELECT pe.entry_id AS 'ID', pe.title AS 'Title', " &
-                                          "pe.description AS 'Description', " &
-                                          "c.category_name AS 'Skill Competency', " &
-                                          "IFNULL(pe.course_code, 'N/A') AS 'Course Code', " &
-                                          "at.type_name AS 'Activity Type', " &
-                                          "pe.date_completed AS 'Date Completed' " &
-                                          "FROM portfolio_entries pe " &
-                                          "INNER JOIN categories c ON pe.category_id = c.category_id " &
-                                          "INNER JOIN activity_types at ON pe.activity_type_id = at.activity_type_id " &
-                                          "WHERE pe.student_number = @stud "
-
-                    If Not String.IsNullOrWhiteSpace(txtSearch.Text) Then
-                        query &= "AND (pe.title LIKE @search OR pe.description LIKE @search OR pe.course_code LIKE @search) "
-                    End If
-
-                    query &= "ORDER BY pe.date_completed DESC"
-
-                    Using cmd As New MySqlCommand(query, conn)
-                        cmd.Parameters.AddWithValue("@stud", selectedStudentNumber)
-
-                        If Not String.IsNullOrWhiteSpace(txtSearch.Text) Then
-                            cmd.Parameters.AddWithValue("@search", "%" & txtSearch.Text.Trim() & "%")
-                        End If
-
-                        Dim adapter As New MySqlDataAdapter(cmd)
-                        Dim table As New DataTable()
-                        adapter.Fill(table)
-
-                        dgvAdminPortfolio.DataSource = table
-                    End Using
-                End If
-            End Using
-        Catch ex As Exception
-        End Try
+    Private Sub cboStudentSearch_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cboStudentSearch.SelectedIndexChanged
+        If cboStudentSearch.ValueMember <> "" Then
+            LoadArtifactRecords()
+        End If
     End Sub
 
-    Private Sub txtSearch_TextChanged(sender As Object, e As EventArgs) Handles txtSearch.TextChanged
-        LoadStudentPortfolio()
+    Private Sub AddActionButtonColumn()
+        If Not dgvAdminPortfolio.Columns.Contains("btnActions") Then
+            Dim btnColumn As New DataGridViewButtonColumn()
+            btnColumn.Name = "btnActions"
+            btnColumn.HeaderText = "Actions"
+            btnColumn.Text = "View"
+            btnColumn.UseColumnTextForButtonValue = True
+            btnColumn.Width = 80
+            btnColumn.FlatStyle = FlatStyle.Standard
+
+            dgvAdminPortfolio.Columns.Add(btnColumn)
+        End If
+    End Sub
+
+    Private Sub dgvAdminPortfolio_CellContentClick(sender As Object, e As DataGridViewCellEventArgs) Handles dgvAdminPortfolio.CellContentClick
+        If e.RowIndex >= 0 AndAlso dgvAdminPortfolio.Columns(e.ColumnIndex).Name = "btnActions" Then
+            Dim selectedRow As DataGridViewRow = dgvAdminPortfolio.Rows(e.RowIndex)
+
+            Dim entryId As String = selectedRow.Cells("ID").Value.ToString()
+            Dim studentNo As String = selectedRow.Cells("Student No.").Value.ToString()
+            Dim studentName As String = selectedRow.Cells("Student Name").Value.ToString()
+            Dim artifactTitle As String = selectedRow.Cells("Title").Value.ToString()
+
+            OpenArtifactDetailModal(entryId, studentNo, studentName, artifactTitle)
+        End If
+    End Sub
+
+    Private Sub OpenArtifactDetailModal(entryId As String, studentNo As String, studentName As String, title As String)
+        Dim numericId As Integer = 0
+        If Integer.TryParse(entryId, numericId) Then
+            Dim modal As New frmArtifactDetailModal(numericId)
+            modal.ShowDialog(Me)
+        End If
+    End Sub
+
+    Private Sub txtFilterRecords_TextChanged(sender As Object, e As EventArgs) Handles txtFilterRecords.TextChanged
+        LoadArtifactRecords()
+    End Sub
+
+    Private Sub btnRefresh_Click(sender As Object, e As EventArgs) Handles btnRefresh.Click
+        PopulateStudentComboBox()
+        txtFilterRecords.Clear()
+        LoadArtifactRecords()
+    End Sub
+
+    Private Sub btnExit_Click(sender As Object, e As EventArgs) Handles btnExit.Click
+        Dim result As DialogResult = MessageBox.Show("Are you sure you want to exit the application?", "Confirm Exit", MessageBoxButtons.YesNo, MessageBoxIcon.Question)
+        If result = DialogResult.Yes Then
+            Application.Exit()
+        End If
     End Sub
 
 End Class
