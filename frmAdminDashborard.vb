@@ -48,21 +48,21 @@ Public Class frmAdminDashboard
                     Dim selectedStudentNo As String = If(cboStudentSearch.SelectedValue IsNot Nothing, cboStudentSearch.SelectedValue.ToString(), "ALL")
                     Dim filterText As String = txtFilterRecords.Text.Trim()
 
-                    ' Build Query
+                    ' Cleaned SQL Query for Admin Portfolio View
                     Dim query As String = "SELECT " &
-                                         "  p.entry_id AS 'ID', " &
-                                         "  p.student_number AS 'Student No.', " &
-                                         "  CONCAT(s.last_name, ', ', s.first_name) AS 'Student Name', " &
-                                         "  p.title AS 'Title', " &
-                                         "  c.category_name AS 'Skill Competency', " &
-                                         "  COALESCE(p.course_code, 'N/A') AS 'Course Code', " &
-                                         "  act.type_name AS 'Activity Type', " &
-                                         "  p.date_completed AS 'Date Completed' " &
-                                         "FROM portfolio_entries p " &
-                                         "INNER JOIN students s ON p.student_number = s.student_number " &
-                                         "LEFT JOIN categories c ON p.category_id = c.category_id " &
-                                         "LEFT JOIN activity_types act ON p.activity_type_id = act.activity_type_id " &
-                                         "WHERE 1=1"
+                      "  p.entry_id AS 'ID', " &
+                      "  p.student_number AS 'Student No.', " &
+                      "  CONCAT(s.last_name, ', ', s.first_name) AS 'Student Name', " &
+                      "  p.title AS 'Title', " &
+                      "  COALESCE(c.category_name, 'Uncategorized') AS 'Skill Competency', " &
+                      "  COALESCE(p.course_code, 'N/A') AS 'Course Code', " &
+                      "  COALESCE(act.type_name, 'General') AS 'Activity Type', " &
+                      "  p.date_completed AS 'Date Completed' " &
+                      "FROM portfolio_entries p " &
+                      "INNER JOIN students s ON p.student_number = s.student_number " &
+                      "LEFT JOIN categories c ON p.category_id = c.category_id " &
+                      "LEFT JOIN activity_types act ON p.activity_type_id = act.activity_type_id " &
+                      "WHERE 1=1"
 
                     ' Apply Dropdown Filter
                     If selectedStudentNo <> "ALL" Then
