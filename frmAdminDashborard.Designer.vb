@@ -39,6 +39,8 @@ Partial Class frmAdminDashboard
 
     Friend WithEvents pnlChartCard As System.Windows.Forms.Panel
     Friend WithEvents pnlAdminChart As System.Windows.Forms.Panel
+    Friend WithEvents btnViewCompetencies As System.Windows.Forms.Button
+    Friend WithEvents btnViewAcademic As System.Windows.Forms.Button
 
     Friend WithEvents pnlStudentInfo As System.Windows.Forms.Panel
     Friend WithEvents lblInfoStudentNum As System.Windows.Forms.Label
@@ -47,6 +49,7 @@ Partial Class frmAdminDashboard
 
     Friend WithEvents pnlTableSection As System.Windows.Forms.Panel
     Friend WithEvents lblTableTitle As System.Windows.Forms.Label
+    Friend WithEvents lblSearchFilter As System.Windows.Forms.Label
     Friend WithEvents txtFilterRecords As System.Windows.Forms.TextBox
     Friend WithEvents dgvAdminPortfolio As System.Windows.Forms.DataGridView
 
@@ -71,12 +74,15 @@ Partial Class frmAdminDashboard
         Me.lblLastActivitySub = New System.Windows.Forms.Label()
         Me.pnlChartCard = New System.Windows.Forms.Panel()
         Me.pnlAdminChart = New System.Windows.Forms.Panel()
+        Me.btnViewCompetencies = New System.Windows.Forms.Button()
+        Me.btnViewAcademic = New System.Windows.Forms.Button()
         Me.pnlStudentInfo = New System.Windows.Forms.Panel()
         Me.lblInfoStudentNum = New System.Windows.Forms.Label()
         Me.lblInfoFullName = New System.Windows.Forms.Label()
         Me.lblInfoProgram = New System.Windows.Forms.Label()
         Me.pnlTableSection = New System.Windows.Forms.Panel()
         Me.lblTableTitle = New System.Windows.Forms.Label()
+        Me.lblSearchFilter = New System.Windows.Forms.Label()
         Me.txtFilterRecords = New System.Windows.Forms.TextBox()
         Me.dgvAdminPortfolio = New System.Windows.Forms.DataGridView()
         Me.pnlTopNav.SuspendLayout()
@@ -301,11 +307,45 @@ Partial Class frmAdminDashboard
             Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
         Me.pnlChartCard.BackColor = System.Drawing.Color.White
         Me.pnlChartCard.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle
+        Me.pnlChartCard.Controls.Add(Me.btnViewAcademic)
+        Me.pnlChartCard.Controls.Add(Me.btnViewCompetencies)
         Me.pnlChartCard.Controls.Add(Me.pnlAdminChart)
         Me.pnlChartCard.Location = New System.Drawing.Point(15, 158)
         Me.pnlChartCard.Name = "pnlChartCard"
         Me.pnlChartCard.Size = New System.Drawing.Size(1150, 175)
         Me.pnlChartCard.TabIndex = 5
+        '
+        'btnViewCompetencies
+        '
+        Me.btnViewCompetencies.Anchor = CType((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
+        Me.btnViewCompetencies.BackColor = System.Drawing.Color.FromArgb(CType(CType(8, Byte), Integer), CType(CType(75, Byte), Integer), CType(CType(42, Byte), Integer))
+        Me.btnViewCompetencies.Cursor = System.Windows.Forms.Cursors.Hand
+        Me.btnViewCompetencies.FlatAppearance.BorderSize = 0
+        Me.btnViewCompetencies.FlatStyle = System.Windows.Forms.FlatStyle.Flat
+        Me.btnViewCompetencies.Font = New System.Drawing.Font("Segoe UI", 7.5!, System.Drawing.FontStyle.Bold)
+        Me.btnViewCompetencies.ForeColor = System.Drawing.Color.White
+        Me.btnViewCompetencies.Location = New System.Drawing.Point(885, 8)
+        Me.btnViewCompetencies.Name = "btnViewCompetencies"
+        Me.btnViewCompetencies.Size = New System.Drawing.Size(120, 26)
+        Me.btnViewCompetencies.TabIndex = 1
+        Me.btnViewCompetencies.Text = "📊 Competencies"
+        Me.btnViewCompetencies.UseVisualStyleBackColor = False
+        '
+        'btnViewAcademic
+        '
+        Me.btnViewAcademic.Anchor = CType((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
+        Me.btnViewAcademic.BackColor = System.Drawing.Color.Gainsboro
+        Me.btnViewAcademic.Cursor = System.Windows.Forms.Cursors.Hand
+        Me.btnViewAcademic.FlatAppearance.BorderSize = 0
+        Me.btnViewAcademic.FlatStyle = System.Windows.Forms.FlatStyle.Flat
+        Me.btnViewAcademic.Font = New System.Drawing.Font("Segoe UI", 7.5!, System.Drawing.FontStyle.Bold)
+        Me.btnViewAcademic.ForeColor = System.Drawing.Color.DarkSlateGray
+        Me.btnViewAcademic.Location = New System.Drawing.Point(1010, 8)
+        Me.btnViewAcademic.Name = "btnViewAcademic"
+        Me.btnViewAcademic.Size = New System.Drawing.Size(130, 26)
+        Me.btnViewAcademic.TabIndex = 2
+        Me.btnViewAcademic.Text = "📚 Academic Courses"
+        Me.btnViewAcademic.UseVisualStyleBackColor = False
         '
         'pnlAdminChart
         '
@@ -370,6 +410,7 @@ Partial Class frmAdminDashboard
         Me.pnlTableSection.BackColor = System.Drawing.Color.White
         Me.pnlTableSection.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle
         Me.pnlTableSection.Controls.Add(Me.lblTableTitle)
+        Me.pnlTableSection.Controls.Add(Me.lblSearchFilter)
         Me.pnlTableSection.Controls.Add(Me.txtFilterRecords)
         Me.pnlTableSection.Controls.Add(Me.dgvAdminPortfolio)
         Me.pnlTableSection.Location = New System.Drawing.Point(15, 390)
@@ -388,14 +429,28 @@ Partial Class frmAdminDashboard
         Me.lblTableTitle.TabIndex = 0
         Me.lblTableTitle.Text = "ARTIFACT RECORDS REPOSITORY"
         '
+        'lblSearchFilter
+        '
+        Me.lblSearchFilter.Anchor = CType((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
+        Me.lblSearchFilter.AutoSize = True
+        Me.lblSearchFilter.Font = New System.Drawing.Font("Segoe UI", 8.5!, System.Drawing.FontStyle.Bold)
+        Me.lblSearchFilter.ForeColor = System.Drawing.Color.FromArgb(CType(CType(60, Byte), Integer), CType(CType(70, Byte), Integer), CType(CType(80, Byte), Integer))
+        Me.lblSearchFilter.Location = New System.Drawing.Point(745, 13)
+        Me.lblSearchFilter.Name = "lblSearchFilter"
+        Me.lblSearchFilter.Size = New System.Drawing.Size(130, 20)
+        Me.lblSearchFilter.TabIndex = 1
+        Me.lblSearchFilter.Text = "🔍 Search Records:"
+        '
         'txtFilterRecords
         '
         Me.txtFilterRecords.Anchor = CType((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
         Me.txtFilterRecords.Font = New System.Drawing.Font("Segoe UI", 9.0!)
+        Me.txtFilterRecords.ForeColor = System.Drawing.Color.Gray
         Me.txtFilterRecords.Location = New System.Drawing.Point(880, 10)
         Me.txtFilterRecords.Name = "txtFilterRecords"
         Me.txtFilterRecords.Size = New System.Drawing.Size(255, 27)
-        Me.txtFilterRecords.TabIndex = 1
+        Me.txtFilterRecords.TabIndex = 2
+        Me.txtFilterRecords.Text = "Search artifact title, student, or course..."
         '
         'dgvAdminPortfolio
         '
@@ -416,7 +471,7 @@ Partial Class frmAdminDashboard
         Me.dgvAdminPortfolio.RowTemplate.Height = 28
         Me.dgvAdminPortfolio.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect
         Me.dgvAdminPortfolio.Size = New System.Drawing.Size(1148, 265)
-        Me.dgvAdminPortfolio.TabIndex = 2
+        Me.dgvAdminPortfolio.TabIndex = 3
         '
         'frmAdminDashboard
         '
