@@ -453,10 +453,17 @@ Public Class frmAdminDashboard
         LoadArtifactRecords()
     End Sub
 
-    Private Sub btnExit_Click(sender As Object, e As EventArgs) Handles btnExit.Click
-        Dim result As DialogResult = MessageBox.Show("Are you sure you want to exit the application?", "Confirm Exit", MessageBoxButtons.YesNo, MessageBoxIcon.Question)
+
+    Private Sub btnLogout_Click(sender As Object, e As EventArgs) Handles btnLogout.Click
+        Dim result As DialogResult = MessageBox.Show("Are you sure you want to log out from the Admin Portal?",
+                                                    "Confirm Admin Logout",
+                                                    MessageBoxButtons.YesNo,
+                                                    MessageBoxIcon.Question)
         If result = DialogResult.Yes Then
-            Application.Exit()
+            ' Redirect to Admin Login Form
+            Dim loginAdminForm As New frmAdminLogin()
+            loginAdminForm.Show()
+            Me.Close()
         End If
     End Sub
 

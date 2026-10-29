@@ -19,7 +19,7 @@ Partial Class frmAdminDashboard
     Friend WithEvents lblNavTitle As System.Windows.Forms.Label
     Friend WithEvents lblNavSub As System.Windows.Forms.Label
     Friend WithEvents btnRefresh As System.Windows.Forms.Button
-    Friend WithEvents btnExit As System.Windows.Forms.Button
+    Friend WithEvents btnLogout As System.Windows.Forms.Button
 
     Friend WithEvents pnlSearchCard As System.Windows.Forms.Panel
     Friend WithEvents lblSearchHeader As System.Windows.Forms.Label
@@ -59,7 +59,7 @@ Partial Class frmAdminDashboard
         Me.lblNavTitle = New System.Windows.Forms.Label()
         Me.lblNavSub = New System.Windows.Forms.Label()
         Me.btnRefresh = New System.Windows.Forms.Button()
-        Me.btnExit = New System.Windows.Forms.Button()
+        Me.btnLogout = New System.Windows.Forms.Button()
         Me.pnlSearchCard = New System.Windows.Forms.Panel()
         Me.lblSearchHeader = New System.Windows.Forms.Label()
         Me.cboStudentSearch = New System.Windows.Forms.ComboBox()
@@ -102,7 +102,7 @@ Partial Class frmAdminDashboard
         Me.pnlTopNav.Controls.Add(Me.lblNavTitle)
         Me.pnlTopNav.Controls.Add(Me.lblNavSub)
         Me.pnlTopNav.Controls.Add(Me.btnRefresh)
-        Me.pnlTopNav.Controls.Add(Me.btnExit)
+        Me.pnlTopNav.Controls.Add(Me.btnLogout)
         Me.pnlTopNav.Dock = System.Windows.Forms.DockStyle.Top
         Me.pnlTopNav.Location = New System.Drawing.Point(0, 0)
         Me.pnlTopNav.Name = "pnlTopNav"
@@ -140,28 +140,28 @@ Partial Class frmAdminDashboard
         Me.btnRefresh.FlatStyle = System.Windows.Forms.FlatStyle.Flat
         Me.btnRefresh.Font = New System.Drawing.Font("Segoe UI", 8.5!, System.Drawing.FontStyle.Bold)
         Me.btnRefresh.ForeColor = System.Drawing.Color.White
-        Me.btnRefresh.Location = New System.Drawing.Point(965, 14)
+        Me.btnRefresh.Location = New System.Drawing.Point(955, 14)
         Me.btnRefresh.Name = "btnRefresh"
         Me.btnRefresh.Size = New System.Drawing.Size(100, 32)
         Me.btnRefresh.TabIndex = 2
         Me.btnRefresh.Text = "🔄 Refresh"
         Me.btnRefresh.UseVisualStyleBackColor = False
         '
-        'btnExit
+        'btnLogout
         '
-        Me.btnExit.Anchor = CType((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
-        Me.btnExit.BackColor = System.Drawing.Color.FromArgb(CType(CType(180, Byte), Integer), CType(CType(40, Byte), Integer), CType(CType(40, Byte), Integer))
-        Me.btnExit.Cursor = System.Windows.Forms.Cursors.Hand
-        Me.btnExit.FlatAppearance.BorderSize = 0
-        Me.btnExit.FlatStyle = System.Windows.Forms.FlatStyle.Flat
-        Me.btnExit.Font = New System.Drawing.Font("Segoe UI", 8.5!, System.Drawing.FontStyle.Bold)
-        Me.btnExit.ForeColor = System.Drawing.Color.White
-        Me.btnExit.Location = New System.Drawing.Point(1075, 14)
-        Me.btnExit.Name = "btnExit"
-        Me.btnExit.Size = New System.Drawing.Size(90, 32)
-        Me.btnExit.TabIndex = 3
-        Me.btnExit.Text = "❌ Exit"
-        Me.btnExit.UseVisualStyleBackColor = False
+        Me.btnLogout.Anchor = CType((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
+        Me.btnLogout.BackColor = System.Drawing.Color.FromArgb(CType(CType(180, Byte), Integer), CType(CType(40, Byte), Integer), CType(CType(40, Byte), Integer))
+        Me.btnLogout.Cursor = System.Windows.Forms.Cursors.Hand
+        Me.btnLogout.FlatAppearance.BorderSize = 0
+        Me.btnLogout.FlatStyle = System.Windows.Forms.FlatStyle.Flat
+        Me.btnLogout.Font = New System.Drawing.Font("Segoe UI", 8.5!, System.Drawing.FontStyle.Bold)
+        Me.btnLogout.ForeColor = System.Drawing.Color.White
+        Me.btnLogout.Location = New System.Drawing.Point(1065, 14)
+        Me.btnLogout.Name = "btnLogout"
+        Me.btnLogout.Size = New System.Drawing.Size(100, 32)
+        Me.btnLogout.TabIndex = 3
+        Me.btnLogout.Text = "🚪 Logout"
+        Me.btnLogout.UseVisualStyleBackColor = False
         '
         'pnlSearchCard
         '
